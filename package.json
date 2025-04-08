@@ -1,0 +1,12 @@
+{
+  "name": "vk-plugin-list",
+  "version": "1.0.0",
+  "description": "WordPress plugin for displaying installed plugins list",
+  "scripts": {
+    "dist": "rimraf dist && mkdir -p dist/vk-plugin-list && rsync -av --exclude='.git' --exclude='node_modules' --exclude='dist' --exclude='*.json' --exclude='*.md' . dist/vk-plugin-list/",
+    "zip": "npm run dist && cd dist && zip -r vk-plugin-list.zip vk-plugin-list"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5"
+  }
+} 
