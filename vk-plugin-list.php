@@ -82,6 +82,7 @@ if ( ! class_exists( 'VK_Plugin_List' ) ) {
                 $plugin_name = esc_html( $plugin_data['Name'] );
                 $plugin_description = esc_html( $plugin_data['Description'] );
                 $plugin_author = esc_html( $plugin_data['Author'] );
+                $plugin_version = esc_html( $plugin_data['Version'] );
 
                 // Plugin URI
                 if ( ! empty( $plugin_data['PluginURI'] ) ) {
@@ -95,7 +96,7 @@ if ( ! class_exists( 'VK_Plugin_List' ) ) {
 
                 $output .= '<tr>';
                 $output .= '<td>' . $plugin_name . '</td>';
-                $output .= '<td><div class="vkpl_description">' . $plugin_description . '</div><div class="vkpl_author">' . __( 'Author:', 'vk-plugin-list' ) . ' ' . $plugin_author . '</div></td>';
+                $output .= '<td><div class="vkpl_description">' . $plugin_description . '</div><div class="vkpl_meta"><span class="vkpl_version">' . __( 'Version:', 'vk-plugin-list' ) . ' ' . $plugin_version . '</span> | <span class="vkpl_author">' . __( 'Author:', 'vk-plugin-list' ) . ' ' . $plugin_author . '</span></div></td>';
                 $output .= '</tr>';
             }
 
