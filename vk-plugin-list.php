@@ -2,8 +2,11 @@
 /**
  * Plugin Name: VK Plugin List
  * Description: インストールされたプラグインのリストを表示する WordPress プラグイン。
+ * Plugin URI: https://github.com/vektor-inc/vk-plugin-list
  * Version: 1.0
- * Author: Your Name
+ * Author: Vektor,Inc.
+ * Author URI: https://www.vektor-inc.co.jp/
+ * Text Domain: vk-plugin-list
  * License: GPLv2
  */
 
