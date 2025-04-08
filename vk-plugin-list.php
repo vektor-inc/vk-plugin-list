@@ -10,6 +10,9 @@
  * License: GPLv2 or later
  */
 
+// GitHub Updaterを読み込む
+require_once plugin_dir_path( __FILE__ ) . 'class-vk-plugin-list-updater.php';
+
 if ( ! class_exists( 'VK_Plugin_List' ) ) {
     class VK_Plugin_List {
 
@@ -118,3 +121,6 @@ if ( ! class_exists( 'VK_Plugin_List' ) ) {
     // クラスを初期化
     new VK_Plugin_List();
 }
+
+// GitHub Updaterを初期化
+new VK_Plugin_List_Updater( __FILE__ );
