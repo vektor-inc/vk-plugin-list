@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: VK Plugin List
- * Description: インストールされたプラグインのリストを表示する WordPress プラグイン。
+ * Description: インストールされたプラグインのリストを表示する WordPress プラグイン。ショートコード [vk-plugin-list] で表示できます。
  * Plugin URI: https://github.com/vektor-inc/vk-plugin-list
  * Version: 0.1.0
  * Author: Vektor,Inc.
@@ -44,6 +44,23 @@ if ( ! class_exists( 'VK_Plugin_List' ) ) {
                     continue;
                 }
 
+                // プラグインのテキストドメインを取得
+                $plugin_textdomain = '';
+                if ( isset( $plugin_data['TextDomain'] ) && ! empty( $plugin_data['TextDomain'] ) ) {
+                    $plugin_textdomain = $plugin_data['TextDomain'];
+                } else {
+                    // TextDomainが設定されていない場合は、プラグインのスラッグから推測
+                    $plugin_slug = dirname( $plugin_file );
+                    if ( '.' !== $plugin_slug ) {
+                        $plugin_textdomain = $plugin_slug;
+                    }
+                }
+
+                // 説明文を翻訳
+                if ( ! empty( $plugin_textdomain ) ) {
+                    $plugin_data['Description'] = __( $plugin_data['Description'], $plugin_textdomain );
+                }
+
                 $filtered_plugins[$plugin_file] = $plugin_data;
             }
 
@@ -58,7 +75,7 @@ if ( ! class_exists( 'VK_Plugin_List' ) ) {
          */
         private function render_plugin_list_html( $plugins ) {
             $output = '<table class="vkpl_table vk-table--mobile-block">';
-            $output .= '<thead><tr><th>Plugin Name</th><th>Description</th></tr></thead>';
+            $output .= '<thead><tr><th>' . __( 'Plugin Name', 'vk-plugin-list' ) . '</th><th>' . __( 'Description', 'vk-plugin-list' ) . '</th></tr></thead>';
             $output .= '<tbody>';
 
             foreach ( $plugins as $plugin_file => $plugin_data ) {
@@ -78,7 +95,7 @@ if ( ! class_exists( 'VK_Plugin_List' ) ) {
 
                 $output .= '<tr>';
                 $output .= '<td>' . $plugin_name . '</td>';
-                $output .= '<td><div class="vkpl_description">' . $plugin_description . '</div><div class="vkpl_author">' . $plugin_author . '</div></td>';
+                $output .= '<td><div class="vkpl_description">' . $plugin_description . '</div><div class="vkpl_author">' . __( 'Author:', 'vk-plugin-list' ) . ' ' . $plugin_author . '</div></td>';
                 $output .= '</tr>';
             }
 
