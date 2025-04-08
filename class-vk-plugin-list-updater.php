@@ -6,144 +6,206 @@
  */
 
 if ( ! class_exists( 'VK_Plugin_List_Updater' ) ) {
-    class VK_Plugin_List_Updater {
-        private $plugin_slug;
-        private $plugin_data;
-        private $username;
-        private $repo;
-        private $plugin_file;
-        private $github_api_result;
-        private $access_token;
+	/**
+	 * VK Plugin List Updater Class
+	 */
+	class VK_Plugin_List_Updater {
+		/**
+		 * プラグインのスラッグ
+		 *
+		 * @var string
+		 */
+		private $plugin_slug;
 
-        public function __construct( $plugin_file ) {
-            add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'set_transient' ) );
-            add_filter( 'plugins_api', array( $this, 'set_plugin_info' ), 10, 3 );
-            add_filter( 'upgrader_post_install', array( $this, 'post_install' ), 10, 3 );
+		/**
+		 * プラグインのデータ
+		 *
+		 * @var array
+		 */
+		private $plugin_data;
 
-            $this->plugin_file = $plugin_file;
-            $this->username    = 'vektor-inc';
-            $this->repo       = 'vk-plugin-list';
-        }
+		/**
+		 * GitHubのユーザー名
+		 *
+		 * @var string
+		 */
+		private $username;
 
-        /**
-         * Get information regarding our plugin from WordPress
-         */
-        private function init_plugin_data() {
-            $this->plugin_slug = plugin_basename( $this->plugin_file );
-            $this->plugin_data = get_plugin_data( $this->plugin_file );
-        }
+		/**
+		 * GitHubのリポジトリ名
+		 *
+		 * @var string
+		 */
+		private $repo;
 
-        /**
-         * Get information regarding our plugin from GitHub
-         */
-        private function get_repository_info() {
-            if ( ! empty( $this->github_api_result ) ) {
-                return;
-            }
+		/**
+		 * プラグインファイルのパス
+		 *
+		 * @var string
+		 */
+		private $plugin_file;
 
-            $url = "https://api.github.com/repos/{$this->username}/{$this->repo}/releases";
+		/**
+		 * GitHub APIの結果
+		 *
+		 * @var object
+		 */
+		private $github_api_result;
 
-            $args = array(
-                'headers' => array(
-                    'Accept' => 'application/vnd.github.v3+json',
-                ),
-            );
+		/**
+		 * アクセストークン
+		 *
+		 * @var string
+		 */
+		private $access_token;
 
-            $response = wp_remote_get( $url, $args );
+		/**
+		 * コンストラクタ
+		 *
+		 * @param string $plugin_file プラグインファイルのパス
+		 */
+		public function __construct( $plugin_file ) {
+			add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'set_transient' ) );
+			add_filter( 'plugins_api', array( $this, 'set_plugin_info' ), 10, 3 );
+			add_filter( 'upgrader_post_install', array( $this, 'post_install' ), 10, 3 );
 
-            if ( is_wp_error( $response ) ) {
-                return;
-            }
+			$this->plugin_file = $plugin_file;
+			$this->username    = 'vektor-inc';
+			$this->repo       = 'vk-plugin-list';
+		}
 
-            $response_code = wp_remote_retrieve_response_code( $response );
-            if ( 200 !== $response_code ) {
-                return;
-            }
+		/**
+		 * Get information regarding our plugin from WordPress
+		 */
+		private function init_plugin_data() {
+			$this->plugin_slug = plugin_basename( $this->plugin_file );
+			$this->plugin_data = get_plugin_data( $this->plugin_file );
+		}
 
-            $response_body = wp_remote_retrieve_body( $response );
-            $releases      = json_decode( $response_body );
+		/**
+		 * Get information regarding our plugin from GitHub
+		 */
+		private function get_repository_info() {
+			if ( ! empty( $this->github_api_result ) ) {
+				return;
+			}
 
-            if ( ! is_array( $releases ) || empty( $releases ) ) {
-                return;
-            }
+			$url = "https://api.github.com/repos/{$this->username}/{$this->repo}/releases";
 
-            $this->github_api_result = $releases[0];
-        }
+			$args = array(
+				'headers' => array(
+					'Accept' => 'application/vnd.github.v3+json',
+				),
+			);
 
-        /**
-         * Push in plugin version information to get the update notification
-         */
-        public function set_transient( $transient ) {
-            if ( empty( $transient->checked ) ) {
-                return $transient;
-            }
+			$response = wp_remote_get( $url, $args );
 
-            $this->init_plugin_data();
-            $this->get_repository_info();
+			if ( is_wp_error( $response ) ) {
+				return;
+			}
 
-            if ( empty( $this->github_api_result ) ) {
-                return $transient;
-            }
+			$response_code = wp_remote_retrieve_response_code( $response );
+			if ( 200 !== $response_code ) {
+				return;
+			}
 
-            $do_update = version_compare( $this->github_api_result->tag_name, $this->plugin_data['Version'] );
+			$response_body = wp_remote_retrieve_body( $response );
+			$releases      = json_decode( $response_body );
 
-            if ( $do_update ) {
-                $package = $this->github_api_result->assets[0]->browser_download_url;
+			if ( ! is_array( $releases ) || empty( $releases ) ) {
+				return;
+			}
 
-                $obj              = new stdClass();
-                $obj->slug        = $this->plugin_slug;
-                $obj->new_version = $this->github_api_result->tag_name;
-                $obj->url         = $this->plugin_data['PluginURI'];
-                $obj->package     = $package;
+			$this->github_api_result = $releases[0];
+		}
 
-                $transient->response[ $this->plugin_slug ] = $obj;
-            }
+		/**
+		 * Push in plugin version information to get the update notification
+		 *
+		 * @param object $transient プラグイン更新情報
+		 * @return object 更新されたプラグイン更新情報
+		 */
+		public function set_transient( $transient ) {
+			if ( empty( $transient->checked ) ) {
+				return $transient;
+			}
 
-            return $transient;
-        }
+			$this->init_plugin_data();
+			$this->get_repository_info();
 
-        /**
-         * Push in plugin version information to display in the details lightbox
-         */
-        public function set_plugin_info( $false, $action, $response ) {
-            $this->init_plugin_data();
-            $this->get_repository_info();
+			if ( empty( $this->github_api_result ) ) {
+				return $transient;
+			}
 
-            if ( empty( $response->slug ) || $response->slug !== $this->plugin_slug ) {
-                return $false;
-            }
+			$do_update = version_compare( $this->github_api_result->tag_name, $this->plugin_data['Version'] );
 
-            $response->last_updated = $this->github_api_result->published_at;
-            $response->slug        = $this->plugin_slug;
-            $response->plugin_name = $this->plugin_data['Name'];
-            $response->version     = $this->github_api_result->tag_name;
-            $response->author      = $this->plugin_data['Author'];
-            $response->homepage    = $this->plugin_data['PluginURI'];
+			if ( $do_update ) {
+				$package = $this->github_api_result->assets[0]->browser_download_url;
 
-            $response->sections = array(
-                'description' => $this->plugin_data['Description'],
-            );
+				$obj              = new stdClass();
+				$obj->slug        = $this->plugin_slug;
+				$obj->new_version = $this->github_api_result->tag_name;
+				$obj->url         = $this->plugin_data['PluginURI'];
+				$obj->package     = $package;
 
-            $response->download_link = $this->github_api_result->assets[0]->browser_download_url;
+				$transient->response[ $this->plugin_slug ] = $obj;
+			}
 
-            return $response;
-        }
+			return $transient;
+		}
 
-        /**
-         * Perform additional actions to successfully install our plugin
-         */
-        public function post_install( $true, $hook_extra, $result ) {
-            global $wp_filesystem;
+		/**
+		 * Push in plugin version information to display in the details lightbox
+		 *
+		 * @param object|bool $false プラグイン情報
+		 * @param string      $action アクション
+		 * @param object      $response レスポンス
+		 * @return object|bool 更新されたプラグイン情報
+		 */
+		public function set_plugin_info( $false, $action, $response ) {
+			$this->init_plugin_data();
+			$this->get_repository_info();
 
-            $plugin_folder = WP_PLUGIN_DIR . DIRECTORY_SEPARATOR . dirname( $this->plugin_slug );
-            $wp_filesystem->move( $result['destination'], $plugin_folder );
-            $result['destination'] = $plugin_folder;
+			if ( empty( $response->slug ) || $response->slug !== $this->plugin_slug ) {
+				return $false;
+			}
 
-            if ( is_plugin_active( $this->plugin_slug ) ) {
-                activate_plugin( $this->plugin_slug );
-            }
+			$response->last_updated = $this->github_api_result->published_at;
+			$response->slug        = $this->plugin_slug;
+			$response->plugin_name = $this->plugin_data['Name'];
+			$response->version     = $this->github_api_result->tag_name;
+			$response->author      = $this->plugin_data['Author'];
+			$response->homepage    = $this->plugin_data['PluginURI'];
 
-            return $result;
-        }
-    }
+			$response->sections = array(
+				'description' => $this->plugin_data['Description'],
+			);
+
+			$response->download_link = $this->github_api_result->assets[0]->browser_download_url;
+
+			return $response;
+		}
+
+		/**
+		 * Perform additional actions to successfully install our plugin
+		 *
+		 * @param bool  $true インストール結果
+		 * @param array $hook_extra フックの追加情報
+		 * @param array $result インストール結果
+		 * @return array 更新されたインストール結果
+		 */
+		public function post_install( $true, $hook_extra, $result ) {
+			global $wp_filesystem;
+
+			$plugin_folder = WP_PLUGIN_DIR . DIRECTORY_SEPARATOR . dirname( $this->plugin_slug );
+			$wp_filesystem->move( $result['destination'], $plugin_folder );
+			$result['destination'] = $plugin_folder;
+
+			if ( is_plugin_active( $this->plugin_slug ) ) {
+				activate_plugin( $this->plugin_slug );
+			}
+
+			return $result;
+		}
+	}
 } 
