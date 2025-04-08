@@ -12,11 +12,16 @@
 | Plugin Name | <div class="vkpl_description">Description</div><div class="vkpl_author">Author</div> |
 
 という感じでテーブル形式で出力します。
-表には class="vkpl_table vk-table--mobile-block" を付与してください。
+表には class="vkpl_table vk-table--mobile-block" が付与されます。
 
 インストール済みのプラグインのファイルに
-Plugin URI が記載されている場合はプラグイン名に別ウィンドウでリンクを指定してください。
-Author URI が記載されている場合は Author に別ウィンドウでリンクを指定してください。
+Plugin URI が記載されている場合はプラグイン名に別ウィンドウでリンクを指定されます。
+Author URI が記載されている場合は Author に別ウィンドウでリンクを指定されます。
+
+## 使い方
+
+npm run zip で dist ディレクトリ内に zip ファイルができますので、インストールして有効化します。
+プラグインリストを表示したいページでショートコード '[vk-plugin-list]' を記載してください。
 
 ## 実装について
 
