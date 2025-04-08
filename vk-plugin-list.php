@@ -7,7 +7,7 @@
  * Author: Vektor,Inc.
  * Author URI: https://www.vektor-inc.co.jp/
  * Text Domain: vk-plugin-list
- * License: GPLv2
+ * License: GPLv2 or later
  */
 
 if ( ! class_exists( 'VK_Plugin_List' ) ) {
