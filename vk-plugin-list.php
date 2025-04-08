@@ -3,7 +3,7 @@
  * Plugin Name: VK Plugin List
  * Description: インストールされたプラグインのリストを表示する WordPress プラグイン。ショートコード [vk-plugin-list] で表示できます。
  * Plugin URI: https://github.com/vektor-inc/vk-plugin-list
- * Version: 0.1.1
+ * Version: 0.1.2
  * Author: Vektor,Inc.
  * Author URI: https://www.vektor-inc.co.jp/
  * Text Domain: vk-plugin-list
@@ -96,7 +96,8 @@ if ( ! class_exists( 'VK_Plugin_List' ) ) {
 
 			foreach ( $plugins as $plugin_file => $plugin_data ) {
 				$plugin_name = esc_html( $plugin_data['Name'] );
-				$plugin_description = esc_html( $plugin_data['Description'] );
+				// 説明文はリンクを含む可能性があるため、エスケープしない
+				$plugin_description = $plugin_data['Description'];
 				$plugin_author = esc_html( $plugin_data['Author'] );
 				$plugin_version = esc_html( $plugin_data['Version'] );
 
