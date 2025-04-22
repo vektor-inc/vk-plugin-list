@@ -3,7 +3,7 @@ Contributors: vektor-inc
 Tags: plugin list, shortcode, plugins
 Requires at least: 5.0
 Tested up to: 6.4
-Stable tag: 0.1.2
+Stable tag: 0.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,9 @@ add_filter( 'vk_plugin_list_array', function( $plugins ) {
 1. プラグインリストの表示例
 
 == Changelog ==
+
+= 0.1.3 =
+* 有効化されているプラグインのみを表示
 
 = 0.1.2 =
 * プラグインの説明文に含まれるリンクが正しく表示されるように修正
