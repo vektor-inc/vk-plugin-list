@@ -85,8 +85,22 @@ if ( ! class_exists( 'VK_Plugin_List' ) ) {
 				$filtered_plugins[ $plugin_file ] = $plugin_data;
 			}
 
-			// フィルターフックでプラグインリストを改変可能
-			return apply_filters( 'vk_plugin_list_array', $filtered_plugins );
+			// フィルターフックでプラグインリストを改変可能、安全ガードを入れる
+			$filtered_plugins = apply_filters( 'vk_plugin_list_array', $filtered_plugins );
+
+			if ( ! is_array( $filtered_plugins ) ) {
+				error_log( '[VK Plugin List] Warning: Filter did not return an array.' );
+				return array();
+			}
+
+			foreach ( $filtered_plugins as $plugin_file => $plugin_data ) {
+				if ( ! is_array( $plugin_data ) ) {
+					error_log( '[VK Plugin List] Warning: Plugin data is not an array for ' . $plugin_file );
+					unset( $filtered_plugins[ $plugin_file ] );
+				}
+			}
+
+			return $filtered_plugins;
 		}
 
 		/**
