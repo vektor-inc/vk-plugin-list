@@ -3,7 +3,7 @@
  * Plugin Name: VK Plugin List
  * Description: インストールされたプラグインのリストを表示する WordPress プラグイン。ショートコード [vk-plugin-list] で表示できます。
  * Plugin URI: https://github.com/vektor-inc/vk-plugin-list
- * Version: 0.1.2
+ * Version: 0.1.3
  * Author: Vektor,Inc.
  * Author URI: https://www.vektor-inc.co.jp/
  * Text Domain: vk-plugin-list
@@ -51,9 +51,15 @@ if ( ! class_exists( 'VK_Plugin_List' ) ) {
 		private function get_filtered_plugins() {
 			// すべてのプラグインを取得
 			$all_plugins = get_plugins();
+			$active_plugins = get_option( 'active_plugins', array() );
 			$filtered_plugins = array();
 
 			foreach ( $all_plugins as $plugin_file => $plugin_data ) {
+				// 有効化中のプラグインのみ対象
+				if ( ! in_array( $plugin_file, $active_plugins, true ) ) {
+					continue;
+				}
+
 				// 除外プラグインをスキップ
 				if ( in_array( $plugin_data['Name'], $this->excluded_plugins, true ) ) {
 					continue;
@@ -79,8 +85,20 @@ if ( ! class_exists( 'VK_Plugin_List' ) ) {
 				$filtered_plugins[ $plugin_file ] = $plugin_data;
 			}
 
-			// フィルターフックでプラグインリストを改変可能
-			return apply_filters( 'vk_plugin_list_array', $filtered_plugins );
+			// フィルターフックでプラグインリストを改変可能、安全ガードを入れる
+			$filtered_plugins = apply_filters( 'vk_plugin_list_array', $filtered_plugins );
+
+			if ( is_array( $filtered_plugins ) ) {
+				foreach ( $filtered_plugins as $plugin_file => $plugin_data ) {
+					if ( ! is_array( $plugin_data ) ) {
+						unset( $filtered_plugins[ $plugin_file ] );
+					}
+				}
+			} else {
+				return array();
+			}
+
+			return $filtered_plugins;
 		}
 
 		/**
