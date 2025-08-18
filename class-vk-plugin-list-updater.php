@@ -197,15 +197,18 @@ if ( ! class_exists( 'VK_Plugin_List_Updater' ) ) {
 		public function post_install( $true, $hook_extra, $result ) {
 			global $wp_filesystem;
 
-			$plugin_folder = WP_PLUGIN_DIR . DIRECTORY_SEPARATOR . dirname( $this->plugin_slug );
-			$wp_filesystem->move( $result['destination'], $plugin_folder );
-			$result['destination'] = $plugin_folder;
+			// Avoid deprecated dirname(null) error and only process if plugin_slug is set
+			if ( ! empty( $this->plugin_slug ) ) {
+				$plugin_folder = WP_PLUGIN_DIR . DIRECTORY_SEPARATOR . dirname( $this->plugin_slug );
+				$wp_filesystem->move( $result['destination'], $plugin_folder );
+				$result['destination'] = $plugin_folder;
 
-			if ( is_plugin_active( $this->plugin_slug ) ) {
-				activate_plugin( $this->plugin_slug );
+				if ( is_plugin_active( $this->plugin_slug ) ) {
+					activate_plugin( $this->plugin_slug );
+				}
 			}
 
 			return $result;
 		}
 	}
-} 
+}
