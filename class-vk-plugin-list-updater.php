@@ -137,9 +137,15 @@ if ( ! class_exists( 'VK_Plugin_List_Updater' ) ) {
 				return $transient;
 			}
 
-			$do_update = version_compare( $this->github_api_result->tag_name, $this->plugin_data['Version'] );
+			// 第3引数に '>' を指定し、GitHubの最新リリースがインストール済みバージョンより新しい場合のみ更新対象とする（ダウングレード防止）。
+			$do_update = version_compare( $this->github_api_result->tag_name, $this->plugin_data['Version'], '>' );
 
 			if ( $do_update ) {
+				// リリースにzip等のアセットが1つも添付されていない場合、ダウンロードURLが取得できないため更新情報を出さない。
+				if ( empty( $this->github_api_result->assets ) || empty( $this->github_api_result->assets[0]->browser_download_url ) ) {
+					return $transient;
+				}
+
 				$package = $this->github_api_result->assets[0]->browser_download_url;
 
 				$obj              = new stdClass();
@@ -167,6 +173,16 @@ if ( ! class_exists( 'VK_Plugin_List_Updater' ) ) {
 			$this->get_repository_info();
 
 			if ( empty( $response->slug ) || $response->slug !== $this->plugin_slug ) {
+				return $false;
+			}
+
+			// GitHub APIの取得に失敗している場合、$this->github_api_result のプロパティ参照でPHP8の警告が発生するため早期returnする。
+			if ( empty( $this->github_api_result ) ) {
+				return $false;
+			}
+
+			// リリースにzip等のアセットが1つも添付されていない場合、ダウンロードURLが取得できないため更新情報を出さない。
+			if ( empty( $this->github_api_result->assets ) || empty( $this->github_api_result->assets[0]->browser_download_url ) ) {
 				return $false;
 			}
 
