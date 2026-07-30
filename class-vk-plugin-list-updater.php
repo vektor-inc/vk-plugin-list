@@ -198,12 +198,18 @@ if ( ! class_exists( 'VK_Plugin_List_Updater' ) ) {
 		 * @return object|bool 更新されたプラグイン情報
 		 */
 		public function set_plugin_info( $false, $action, $response ) {
+			// plugins_api フィルターは全プラグインの「詳細を表示」で発火するため、まずはローカル情報のみでスラッグを用意する。
+			// init_plugin_data() は plugin_basename() と get_plugin_data() だけを使い GitHub 通信を伴わないため、スラッグ照合の前に呼んでも問題ない。
 			$this->init_plugin_data();
-			$this->get_repository_info();
 
+			// 本プラグイン宛でないリクエストは GitHub API へ通信する前にここで打ち切る。
+			// スラッグ照合を通信より前に置くことで、無関係なプラグインの詳細を開くたびに不要な外部通信が発生するのを防ぐ。
 			if ( empty( $response->slug ) || $response->slug !== $this->plugin_slug ) {
 				return $false;
 			}
+
+			// 本プラグイン宛と確定した後にのみ GitHub API へ問い合わせる。
+			$this->get_repository_info();
 
 			// GitHub APIの取得に失敗している場合、$this->github_api_result のプロパティ参照でPHP8の警告が発生するため早期returnする。
 			if ( empty( $this->github_api_result ) ) {
