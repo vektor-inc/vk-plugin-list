@@ -120,6 +120,36 @@ if ( ! class_exists( 'VK_Plugin_List_Updater' ) ) {
 		}
 
 		/**
+		 * リリースアセットから有効なzipファイルのダウンロードURLを取得する
+		 *
+		 * GitHubリリースに複数のアセットが添付されている場合でも、
+		 * ファイル名が .zip（大文字小文字は問わない）で終わるアセットのみを対象とし、
+		 * そのダウンロードURLを返す。zipアセットが無い、または assets が空・未定義の場合は空文字を返す。
+		 *
+		 * @return string 有効なzipアセットのダウンロードURL。該当が無い場合は空文字。
+		 */
+		private function get_package_url() {
+			// APIの取得結果やアセットが空の場合は安全に空文字を返す。
+			if ( empty( $this->github_api_result ) || empty( $this->github_api_result->assets ) ) {
+				return '';
+			}
+
+			foreach ( $this->github_api_result->assets as $asset ) {
+				// ファイル名・ダウンロードURLのいずれかが欠けているアセットはスキップする。
+				if ( empty( $asset->name ) || empty( $asset->browser_download_url ) ) {
+					continue;
+				}
+
+				// ファイル名が .zip（大文字小文字問わず）で終わるアセットのダウンロードURLを返す。
+				if ( '.zip' === strtolower( substr( $asset->name, -4 ) ) ) {
+					return $asset->browser_download_url;
+				}
+			}
+
+			return '';
+		}
+
+		/**
 		 * Push in plugin version information to get the update notification
 		 *
 		 * @param object $transient プラグイン更新情報
@@ -137,10 +167,15 @@ if ( ! class_exists( 'VK_Plugin_List_Updater' ) ) {
 				return $transient;
 			}
 
-			$do_update = version_compare( $this->github_api_result->tag_name, $this->plugin_data['Version'] );
+			// 第3引数に '>' を指定し、GitHubの最新リリースがインストール済みバージョンより新しい場合のみ更新対象とする（ダウングレード防止）。
+			$do_update = version_compare( $this->github_api_result->tag_name, $this->plugin_data['Version'], '>' );
 
 			if ( $do_update ) {
-				$package = $this->github_api_result->assets[0]->browser_download_url;
+				// リリースアセットから有効なzipのダウンロードURLを取得する。有効なzipが無ければ更新情報を出さない。
+				$package = $this->get_package_url();
+				if ( '' === $package ) {
+					return $transient;
+				}
 
 				$obj              = new stdClass();
 				$obj->slug        = $this->plugin_slug;
@@ -170,6 +205,17 @@ if ( ! class_exists( 'VK_Plugin_List_Updater' ) ) {
 				return $false;
 			}
 
+			// GitHub APIの取得に失敗している場合、$this->github_api_result のプロパティ参照でPHP8の警告が発生するため早期returnする。
+			if ( empty( $this->github_api_result ) ) {
+				return $false;
+			}
+
+			// リリースアセットから有効なzipのダウンロードURLを取得する。有効なzipが無ければ更新情報を出さない。
+			$package = $this->get_package_url();
+			if ( '' === $package ) {
+				return $false;
+			}
+
 			$response->last_updated = $this->github_api_result->published_at;
 			$response->slug        = $this->plugin_slug;
 			$response->plugin_name = $this->plugin_data['Name'];
@@ -181,7 +227,7 @@ if ( ! class_exists( 'VK_Plugin_List_Updater' ) ) {
 				'description' => $this->plugin_data['Description'],
 			);
 
-			$response->download_link = $this->github_api_result->assets[0]->browser_download_url;
+			$response->download_link = $package;
 
 			return $response;
 		}
