@@ -49,6 +49,13 @@ if ( ! class_exists( 'VK_Plugin_List' ) ) {
 		 * @return array フィルタリングされたプラグインリスト
 		 */
 		private function get_filtered_plugins() {
+			// get_plugins() は wp-admin/includes/plugin.php（管理画面用）で定義される関数のため、
+			// フロント（公開ページ）でショートコードが実行された際に同ファイルが未読み込みだと
+			// 未定義関数エラーになる。読み込み順への依存をなくすため、未定義なら明示的に読み込む。
+			if ( ! function_exists( 'get_plugins' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
+
 			// すべてのプラグインを取得
 			$all_plugins = get_plugins();
 			$active_plugins = get_option( 'active_plugins', array() );
