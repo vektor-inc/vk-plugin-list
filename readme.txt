@@ -3,7 +3,7 @@ Contributors: vektor-inc
 Tags: plugin list, shortcode, plugins
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 0.1.4
+Stable tag: 0.1.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,7 @@ add_filter( 'vk_plugin_list_array', function( $plugins ) {
 
 == Changelog ==
 
+= 0.1.5 =
 * [ 仕様変更 ] プラグイン一覧の列見出しを、スクリーンリーダーが列との対応を正しく読み上げられるよう改善
 * [ 不具合修正 ] 他のプラグインの「詳細を表示」を開いたときに、本プラグインが不要な外部通信を行っていた不具合を修正
 * [ 不具合修正 ] GitHub の最新リリースがインストール済みバージョンより古い場合に、更新（ダウングレード）を促してしまう不具合を修正
