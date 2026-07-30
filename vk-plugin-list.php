@@ -118,7 +118,7 @@ if ( ! class_exists( 'VK_Plugin_List' ) ) {
 		 */
 		private function render_plugin_list_html( $plugins ) {
 			$output = '<table class="vkpl_table vk-table--mobile-block">';
-			$output .= '<thead><tr><th>' . esc_html__( 'Plugin Name', 'vk-plugin-list' ) . '</th><th>' . esc_html__( 'Description', 'vk-plugin-list' ) . '</th></tr></thead>';
+			$output .= '<thead><tr><th scope="col">' . esc_html__( 'Plugin Name', 'vk-plugin-list' ) . '</th><th scope="col">' . esc_html__( 'Description', 'vk-plugin-list' ) . '</th></tr></thead>';
 			$output .= '<tbody>';
 
 			// 説明文の出力で許可する HTML タグ。WordPress コアが管理画面のプラグイン一覧で説明文を表示する際に使う許可タグ（wp-admin/includes/plugin.php の _get_plugin_data_markup_translate()）と完全に同一にしている。
