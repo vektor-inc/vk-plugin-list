@@ -127,7 +127,7 @@ if ( ! class_exists( 'VK_Plugin_List' ) ) {
 				),
 			);
 
-			foreach ( $plugins as $plugin_file => $plugin_data ) {
+			foreach ( $plugins as $plugin_data ) {
 				$plugin_name = esc_html( $plugin_data['Name'] );
 				// 説明文はリンクを含む可能性があるため、コア準拠の許可タグでサニタイズする。get_plugins() が返す生ヘッダーはコアのサニタイズを通っておらず、外部由来の文字列が公開ページに出力される配信境界のため、出力前に wp_kses で安全化する。
 				$plugin_description = wp_kses( $plugin_data['Description'], $allowed_description_html );
