@@ -79,6 +79,8 @@ if ( ! class_exists( 'VK_Plugin_List' ) ) {
 
 				// 説明文を翻訳
 				if ( ! empty( $plugin_textdomain ) ) {
+					// 翻訳済みの説明文を各プラグインのテキストドメインで再翻訳する目的で、変数を第1引数・第2引数に渡している。POT からの自動抽出はできず WPCS でも警告になるが、WordPress コア（wp-admin/includes/plugin.php の _get_plugin_data_markup_translate()）も同様の処理を phpcs:ignore 付きで行っているため、その方針に準拠する。
+					// phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText,WordPress.WP.I18n.NonSingularStringLiteralDomain
 					$plugin_data['Description'] = __( $plugin_data['Description'], $plugin_textdomain );
 				}
 
@@ -112,10 +114,23 @@ if ( ! class_exists( 'VK_Plugin_List' ) ) {
 			$output .= '<thead><tr><th>' . esc_html__( 'Plugin Name', 'vk-plugin-list' ) . '</th><th>' . esc_html__( 'Description', 'vk-plugin-list' ) . '</th></tr></thead>';
 			$output .= '<tbody>';
 
-			foreach ( $plugins as $plugin_file => $plugin_data ) {
+			// 説明文の出力で許可する HTML タグ。WordPress コアが管理画面のプラグイン一覧で説明文を表示する際に使う許可タグ（wp-admin/includes/plugin.php の _get_plugin_data_markup_translate()）と完全に同一にしている。
+			$allowed_description_html = array(
+				'abbr'    => array( 'title' => true ),
+				'acronym' => array( 'title' => true ),
+				'code'    => true,
+				'em'      => true,
+				'strong'  => true,
+				'a'       => array(
+					'href'  => true,
+					'title' => true,
+				),
+			);
+
+			foreach ( $plugins as $plugin_data ) {
 				$plugin_name = esc_html( $plugin_data['Name'] );
-				// 説明文はリンクを含む可能性があるため、エスケープしない
-				$plugin_description = $plugin_data['Description'];
+				// 説明文はリンクを含む可能性があるため、コア準拠の許可タグでサニタイズする。get_plugins() が返す生ヘッダーはコアのサニタイズを通っておらず、外部由来の文字列が公開ページに出力される配信境界のため、出力前に wp_kses で安全化する。
+				$plugin_description = wp_kses( $plugin_data['Description'], $allowed_description_html );
 				$plugin_author = esc_html( $plugin_data['Author'] );
 				$plugin_version = esc_html( $plugin_data['Version'] );
 
