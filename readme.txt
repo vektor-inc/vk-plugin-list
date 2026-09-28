@@ -3,7 +3,7 @@ Contributors: vektor-inc
 Tags: plugin list, shortcode, plugins
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 0.1.5
+Stable tag: 0.1.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,7 @@ add_filter( 'vk_plugin_list_array', function( $plugins ) {
 
 == Changelog ==
 
+= 0.1.6 =
 * [ 不具合修正 ] プラグイン一覧で本プラグインの「自動更新」欄が空欄になり、自動更新を設定できない不具合を修正
 * [ 不具合修正 ] 本プラグインを有効化した状態で他のプラグイン・テーマを更新すると、対象を確認せず本プラグインのフォルダへの移動処理が動いてしまう不具合を修正
 
