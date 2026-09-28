@@ -336,10 +336,16 @@ if ( ! class_exists( 'VK_Plugin_List_Updater' ) ) {
 		public function post_install( $true, $hook_extra, $result ) {
 			global $wp_filesystem;
 
-			// plugin_slug は init_plugin_data() を呼ぶまで未セットのため、
-			// $hook_extra との比較前に必ず呼び出してセットしておく
+			// plugin_slug は init_plugin_data() 等を呼ぶまで未セットのため、
+			// $hook_extra との比較前に必ずセットしておく
 			// （set_transient() 等が同一リクエスト内で先に呼ばれているとは限らないため）。
-			$this->init_plugin_data();
+			// upgrader_post_install はパッケージ展開後、WordPress がファイルを
+			// 既存のプラグインフォルダへ移動した「後」に発火するため、この時点では
+			// $this->plugin_file（コンストラクタで受け取った元のファイルパス）が
+			// 既に存在しない可能性がある。init_plugin_data() は内部で get_plugin_data()
+			// を呼びファイルを fopen() で読み込むため、ここではファイル読み込みを
+			// 伴わない plugin_basename() のみでスラッグを設定する。
+			$this->plugin_slug = plugin_basename( $this->plugin_file );
 
 			// $hook_extra はプラグインなら 'plugin' キー、テーマなら 'theme' キーにスラッグが入る。
 			// いずれのキーも無い場合は空文字とし、本プラグインのスラッグとは一致しない値にする。
