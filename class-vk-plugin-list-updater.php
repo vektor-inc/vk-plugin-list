@@ -152,41 +152,120 @@ if ( ! class_exists( 'VK_Plugin_List_Updater' ) ) {
 		/**
 		 * Push in plugin version information to get the update notification
 		 *
+		 * WordPress のプラグイン一覧は、対象プラグインが $transient->response（更新あり）
+		 * または $transient->no_update（更新なし）のどちらかに登録されていないと
+		 * update-supported を false と判定し、「自動更新」欄自体を表示しない
+		 * （wp-admin/includes/class-wp-plugins-list-table.php 参照）。
+		 * そのため、更新が無い場合も no_update 側へ明示的に登録する。
+		 *
 		 * @param object $transient プラグイン更新情報
 		 * @return object 更新されたプラグイン更新情報
 		 */
 		public function set_transient( $transient ) {
+			// $transient がオブジェクトでない場合はプロパティを触れないためそのまま返す。
+			if ( ! is_object( $transient ) ) {
+				return $transient;
+			}
+
 			if ( empty( $transient->checked ) ) {
 				return $transient;
+			}
+
+			// response / no_update が未定義・配列以外でも安全に添字代入できるようガードする。
+			if ( ! isset( $transient->response ) || ! is_array( $transient->response ) ) {
+				$transient->response = array();
+			}
+			if ( ! isset( $transient->no_update ) || ! is_array( $transient->no_update ) ) {
+				$transient->no_update = array();
 			}
 
 			$this->init_plugin_data();
 			$this->get_repository_info();
 
+			$current_version = isset( $this->plugin_data['Version'] ) ? (string) $this->plugin_data['Version'] : '';
+
+			// GitHub API の取得に失敗した場合も、自動更新欄が消えないよう no_update に登録する。
+			// 更新の有無が確認できないだけで、プラグイン自体は正常に動作しているため。
 			if ( empty( $this->github_api_result ) ) {
+				$this->register_no_update( $transient, $current_version );
 				return $transient;
 			}
 
 			// 第3引数に '>' を指定し、GitHubの最新リリースがインストール済みバージョンより新しい場合のみ更新対象とする（ダウングレード防止）。
-			$do_update = version_compare( $this->github_api_result->tag_name, $this->plugin_data['Version'], '>' );
+			$do_update = version_compare( $this->github_api_result->tag_name, $current_version, '>' );
 
 			if ( $do_update ) {
-				// リリースアセットから有効なzipのダウンロードURLを取得する。有効なzipが無ければ更新情報を出さない。
+				// リリースアセットから有効なzipのダウンロードURLを取得する。
 				$package = $this->get_package_url();
-				if ( '' === $package ) {
+
+				if ( '' !== $package ) {
+					$obj              = new stdClass();
+					$obj->slug        = $this->plugin_slug;
+					$obj->plugin      = $this->plugin_slug; // WP_Automatic_Updater が自動更新の可否判定（auto_update_plugins との照合）に使うため必須。
+					$obj->new_version = $this->github_api_result->tag_name;
+					$obj->url         = isset( $this->plugin_data['PluginURI'] ) ? $this->plugin_data['PluginURI'] : '';
+					$obj->package     = $package;
+
+					// response と no_update の両方に同時登録されないことをコード上で保証するための防御。
+					// 現状の分岐は排他的で両方に載る手順は確認できていないが、
+					// 今後の分岐追加で崩れても片方には確実に載る状態を保つ。
+					unset( $transient->no_update[ $this->plugin_slug ] );
+					$transient->response[ $this->plugin_slug ] = $obj;
+
 					return $transient;
 				}
-
-				$obj              = new stdClass();
-				$obj->slug        = $this->plugin_slug;
-				$obj->new_version = $this->github_api_result->tag_name;
-				$obj->url         = $this->plugin_data['PluginURI'];
-				$obj->package     = $package;
-
-				$transient->response[ $this->plugin_slug ] = $obj;
 			}
 
+			// 更新が無い場合に加え、「更新はあるが配布zipが見つからない」場合も
+			// 自動更新欄が消えないよう no_update に登録する。
+			$this->register_no_update( $transient, $current_version );
+
 			return $transient;
+		}
+
+		/**
+		 * 「更新なし」として $transient->no_update へ登録する
+		 *
+		 * response と no_update の両方に同時登録されないことをコード上で保証するため、
+		 * 登録前に response 側を必ず削除する。現状の呼び出し箇所は排他的で
+		 * 両方に載る手順は確認できていないが、今後の分岐追加で崩れても
+		 * 片方には確実に載る状態を保つための防御。
+		 *
+		 * @param object $transient       プラグイン更新情報（オブジェクトのため呼び出し元にも反映される）
+		 * @param string $current_version 現在のプラグインバージョン
+		 * @return void
+		 */
+		private function register_no_update( $transient, $current_version ) {
+			unset( $transient->response[ $this->plugin_slug ] );
+			$transient->no_update[ $this->plugin_slug ] = $this->build_no_update_item( $current_version );
+		}
+
+		/**
+		 * no_update に登録するプラグイン情報オブジェクトを組み立てる
+		 *
+		 * plugin-update-checker の getNoUpdateItemFields() が生成する項目に倣い、
+		 * WordPress が期待するフィールドを埋める。
+		 * package を空文字にすることで「更新パッケージが無い＝最新」を表す。
+		 *
+		 * @param string $current_version 現在のプラグインバージョン
+		 * @return object no_update に登録するオブジェクト
+		 */
+		private function build_no_update_item( $current_version ) {
+			$obj                = new stdClass();
+			$obj->id            = $this->plugin_slug;
+			$obj->slug          = $this->plugin_slug;
+			$obj->plugin        = $this->plugin_slug;
+			$obj->new_version   = $current_version;
+			$obj->url           = isset( $this->plugin_data['PluginURI'] ) ? $this->plugin_data['PluginURI'] : '';
+			$obj->package       = '';
+			$obj->icons         = array();
+			$obj->banners       = array();
+			$obj->banners_rtl   = array();
+			$obj->tested        = '';
+			$obj->requires_php  = '';
+			$obj->compatibility = new stdClass();
+
+			return $obj;
 		}
 
 		/**
